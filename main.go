@@ -1,6 +1,8 @@
 package main
 
 import (
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"strconv"
 	"time"
 
@@ -16,7 +18,11 @@ TODO This TestJob schedule in main program is for the development debugging.
 
 func main() {
 	c := cdule.Cdule{}
-	c.NewCduleWithWorker("worker1")
+
+	dsn := "host=localhost user=user password=password dbname=db port=5432"
+	db, _ := gorm.Open(postgres.Open(dsn))
+
+	c.NewCduleWithWorker("worker1", db)
 
 	myJob := TestJob{}
 	jobData := make(map[string]string)
