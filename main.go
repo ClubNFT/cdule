@@ -19,17 +19,20 @@ TODO This TestJob schedule in main program is for the development debugging.
 func main() {
 	c := cdule.Cdule{}
 
-	dsn := "host=localhost user=user password=password dbname=db port=5432"
+	dsn := "host=localhost user=queen password=password dbname=clubnft port=5432"
 	db, _ := gorm.Open(postgres.Open(dsn))
 
-	c.NewCduleWithWorker("worker1", db)
+	err := c.NewCduleWithWorker("worker1", db)
+	if err != nil {
+		log.Error(err)
+	}
 
 	myJob := TestJob{}
 	jobData := make(map[string]string)
 	jobData["one"] = "1"
 	jobData["two"] = "2"
 	jobData["three"] = "3"
-	_, err := cdule.NewJob(&myJob, jobData).Build(utils.EveryMinute)
+	_, err = cdule.NewJob(&myJob, jobData).Build(utils.EveryMinute)
 	if nil != err {
 		log.Error(err)
 	}

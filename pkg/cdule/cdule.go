@@ -6,7 +6,6 @@ import (
 
 	"github.com/deepaksinghvi/cdule/pkg/model"
 
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -24,23 +23,29 @@ func init() {
 }
 
 // NewCduleWithWorker to create new scheduler with worker
-func (cdule *Cdule) NewCduleWithWorker(workerName string, db *gorm.DB) {
+func (cdule *Cdule) NewCduleWithWorker(workerName string, db *gorm.DB) error {
 	WorkerID = workerName
-	cdule.NewCdule(db)
+	err := cdule.NewCdule(db)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // NewCdule to create new scheduler with default worker name as hostname
-func (cdule *Cdule) NewCdule(db *gorm.DB) {
+func (cdule *Cdule) NewCdule(db *gorm.DB) error {
 	model.ConnectDataBase(db)
 
 	worker, err := model.CduleRepos.CduleRepository.GetWorker(WorkerID)
 	if nil != err {
-		log.Errorf("Error getting workder %s ", err.Error())
-		return
+		return err
 	}
 	if nil != worker {
 		worker.UpdatedAt = time.Now()
-		model.CduleRepos.CduleRepository.UpdateWorker(worker)
+		_, err := model.CduleRepos.CduleRepository.UpdateWorker(worker)
+		if err != nil {
+			return err
+		}
 	} else {
 		// First time cdule started on a worker node
 		worker := model.Worker{
@@ -49,10 +54,14 @@ func (cdule *Cdule) NewCdule(db *gorm.DB) {
 			UpdatedAt: time.Time{},
 			DeletedAt: gorm.DeletedAt{},
 		}
-		model.CduleRepos.CduleRepository.CreateWorker(&worker)
+		_, err := model.CduleRepos.CduleRepository.CreateWorker(&worker)
+		if err != nil {
+			return err
+		}
 	}
 
 	cdule.createWatcherAndWaitForSignal()
+	return nil
 }
 
 func (cdule *Cdule) createWatcherAndWaitForSignal() {
