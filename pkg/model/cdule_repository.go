@@ -2,6 +2,7 @@ package model
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/deepaksinghvi/cdule/pkg"
 )
@@ -25,8 +26,7 @@ type CduleRepository interface {
 	GetWorkers() ([]Worker, error)
 	DeleteWorker(workerID string) (*Worker, error)
 
-	CreateJob(job *Job) (*Job, error)
-	UpdateJob(job *Job) (*Job, error)
+	CreateOrUpdateJob(job *Job) (*Job, error)
 	GetJob(jobID int64) (*Job, error)
 	GetJobByName(name string) (*Job, error)
 	DeleteJob(jobID int64) (*Job, error)
@@ -38,7 +38,7 @@ type CduleRepository interface {
 	GetJobHistoryForSchedule(scheduleID int64) (*JobHistory, error)
 	DeleteJobHistory(jobID int64) ([]JobHistory, error)
 
-	CreateSchedule(schedule *Schedule) (*Schedule, error)
+	CreateOrUpdateSchedule(schedule *Schedule) (*Schedule, error)
 	UpdateSchedule(schedule *Schedule) (*Schedule, error)
 	GetSchedule(scheduleID int64) (*Schedule, error)
 	GetScheduleBetween(scheduleStart, scheduleEnd int64, workerID string) ([]Schedule, error)
@@ -95,10 +95,16 @@ func (c cduleRepository) DeleteWorker(workerID string) (*Worker, error) {
 }
 
 // CreateJob to create a job
-func (c cduleRepository) CreateJob(job *Job) (*Job, error) {
-	if err := c.DB.Create(job).Error; err != nil {
+func (c cduleRepository) CreateOrUpdateJob(job *Job) (*Job, error) {
+	// Bypass to avoid PK conflict errors. E.g: user inputs his email and a "new wallet address"!
+	// https://stackoverflow.com/questions/39333102/how-to-create-or-update-a-record-with-gorm
+	if err := c.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},                                                                          // key columm
+		DoUpdates: clause.AssignmentColumns([]string{"updated_at", "job_name", "cron_expression", "expired", "job_data"}), // column needed to be updated
+	}).Create(job).Error; err != nil {
 		return nil, err
 	}
+
 	return job, nil
 }
 
@@ -202,8 +208,13 @@ func (c cduleRepository) DeleteJobHistory(jobID int64) ([]JobHistory, error) {
 }
 
 // CreateSchedule to create a schedule
-func (c cduleRepository) CreateSchedule(schedule *Schedule) (*Schedule, error) {
-	if err := c.DB.Create(schedule).Error; err != nil {
+func (c cduleRepository) CreateOrUpdateSchedule(schedule *Schedule) (*Schedule, error) {
+	// Bypass to avoid PK conflict errors. E.g: user inputs his email and a "new wallet address"!
+	// https://stackoverflow.com/questions/39333102/how-to-create-or-update-a-record-with-gorm
+	if err := c.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "execution_id"}, {Name: "job_id"}},                 // key columm
+		DoUpdates: clause.AssignmentColumns([]string{"updated_at", "worker_id", "job_data"}), // column needed to be updated
+	}).Create(schedule).Error; err != nil {
 		return nil, err
 	}
 	return schedule, nil

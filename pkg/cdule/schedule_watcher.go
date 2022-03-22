@@ -135,7 +135,7 @@ func runNextScheduleJobs(scheduleStart, scheduleEnd int64) {
 				JobID:       schedule.JobID,
 				JobData:     jobDataStr,
 			}
-			model.CduleRepos.CduleRepository.CreateSchedule(&newSchedule)
+			model.CduleRepos.CduleRepository.CreateOrUpdateSchedule(&newSchedule)
 			log.Infof("*** Next Job Scheduled Info ***\n JobName: %s,\n Schedule Cron: %s,\n Job Scheduled Time: %d,\n Worker: %s ",
 				scheduledJob.JobName, scheduledJob.CronExpression, newSchedule.ExecutionID, newSchedule.WorkerID)
 		}

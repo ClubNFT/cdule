@@ -32,7 +32,7 @@ func TestRepository_Job(t *testing.T) {
 	testJob, err := createTestJob()
 	require.NoError(t, err)
 
-	expectedResult, err := CduleRepos.CduleRepository.CreateJob(testJob)
+	expectedResult, err := CduleRepos.CduleRepository.CreateOrUpdateJob(testJob)
 
 	actualResult, err := CduleRepos.CduleRepository.GetJob(expectedResult.ID)
 
@@ -40,7 +40,7 @@ func TestRepository_Job(t *testing.T) {
 		t.Fatalf("mismatch (-expectedResult, +actRes):\n%s", diff)
 	}
 	expectedResult.Expired = true
-	_, err = CduleRepos.CduleRepository.UpdateJob(expectedResult)
+	_, err = CduleRepos.CduleRepository.CreateOrUpdateJob(expectedResult)
 
 	actualResult, err = CduleRepos.CduleRepository.GetJobByName("job.RepoTestJob")
 
@@ -86,7 +86,7 @@ func TestRepository_Schedule(t *testing.T) {
 	schedule, err := createTestSchedule()
 	require.NoError(t, err)
 
-	expectedResult, err := CduleRepos.CduleRepository.CreateSchedule(schedule)
+	expectedResult, err := CduleRepos.CduleRepository.CreateOrUpdateSchedule(schedule)
 	actualResult, err := CduleRepos.CduleRepository.GetSchedule(expectedResult.ExecutionID)
 	if diff := cmp.Diff(expectedResult, actualResult, approxTime); diff != "" {
 		t.Fatalf("mismatch (-expectedResult, +actRes):\n%s", diff)
@@ -107,7 +107,7 @@ func TestRepository_Schedule(t *testing.T) {
 	actualResultScheduleArray, err = CduleRepos.CduleRepository.DeleteScheduleForJob(schedule.JobID)
 	require.Equal(t, expectedResult.ExecutionID, actualResultScheduleArray[0].ExecutionID)
 	schedule.JobID = 3
-	expectedResult, err = CduleRepos.CduleRepository.CreateSchedule(schedule)
+	expectedResult, err = CduleRepos.CduleRepository.CreateOrUpdateSchedule(schedule)
 	actualResultScheduleArray, err = CduleRepos.CduleRepository.DeleteScheduleForWorker("dsinghvi-host")
 	require.Equal(t, expectedResult.ExecutionID, actualResultScheduleArray[0].ExecutionID)
 }
@@ -176,13 +176,13 @@ func TestRepository_WithMockDBForErrors(t *testing.T) {
 	require.Error(t, err)
 
 	job, _ := createTestJob()
-	_, err = CduleRepos.CduleRepository.CreateJob(job)
+	_, err = CduleRepos.CduleRepository.CreateOrUpdateJob(job)
 	require.Error(t, err)
 	_, err = CduleRepos.CduleRepository.GetJob(1)
 	require.Error(t, err)
 	_, err = CduleRepos.CduleRepository.GetJobByName("dummyjob")
 	require.Error(t, err)
-	_, err = CduleRepos.CduleRepository.UpdateJob(job)
+	_, err = CduleRepos.CduleRepository.CreateOrUpdateJob(job)
 	require.Error(t, err)
 	_, err = CduleRepos.CduleRepository.DeleteJob(1)
 	require.Error(t, err)
@@ -202,7 +202,7 @@ func TestRepository_WithMockDBForErrors(t *testing.T) {
 	require.Error(t, err)
 
 	schedule, _ := createTestSchedule()
-	_, err = CduleRepos.CduleRepository.CreateSchedule(schedule)
+	_, err = CduleRepos.CduleRepository.CreateOrUpdateSchedule(schedule)
 	require.Error(t, err)
 	_, err = CduleRepos.CduleRepository.GetSchedule(1)
 	require.Error(t, err)

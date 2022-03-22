@@ -2,7 +2,6 @@ package cdule
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -44,10 +43,7 @@ func NewJob(job Job, jobData map[string]string) *AbstractJob {
 func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
 	// register job, this is used later to get the type of a job
 	registerType(j.Job)
-	newJobModel, err := model.CduleRepos.CduleRepository.GetJobByName(j.Job.JobName())
-	if nil != newJobModel || nil != err {
-		return nil, fmt.Errorf("job with Name: %s already exists", newJobModel.JobName)
-	}
+
 	jobDataBytes, err := json.Marshal(j.JobData)
 	/*if nil != err {
 		log.Errorf("Error %s for JobName %s", err.Error(), j.Job.JobName())
@@ -71,7 +67,13 @@ func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
 		return nil, err
 	}
 	nextRunTime := SchedulerParser.Next(time.Now()).UnixNano()
-	job, err := model.CduleRepos.CduleRepository.CreateJob(newJob)
+
+	dbJobModel, err := model.CduleRepos.CduleRepository.GetJobByName(newJob.JobName)
+	if nil != dbJobModel || nil != err {
+		newJob.ID = dbJobModel.ID
+	}
+
+	job, err := model.CduleRepos.CduleRepository.CreateOrUpdateJob(newJob)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -85,7 +87,7 @@ func (j *AbstractJob) Build(cronExpression string) (*model.Job, error) {
 		JobID:       job.ID,
 		JobData:     job.JobData,
 	}
-	_, err = model.CduleRepos.CduleRepository.CreateSchedule(firstSchedule)
+	_, err = model.CduleRepos.CduleRepository.CreateOrUpdateSchedule(firstSchedule)
 	if err != nil {
 		log.Error(err.Error())
 		return job, err

@@ -1,14 +1,13 @@
 package main
 
 import (
+	"github.com/deepaksinghvi/cdule/pkg/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"strconv"
 	"time"
 
 	"github.com/deepaksinghvi/cdule/pkg/cdule"
-	"github.com/deepaksinghvi/cdule/pkg/utils"
-
 	log "github.com/sirupsen/logrus"
 )
 
